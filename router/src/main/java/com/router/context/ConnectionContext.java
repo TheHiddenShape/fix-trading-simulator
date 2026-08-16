@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 public class ConnectionContext {
 
     private String id;
+    private String clientLabel;
     private ByteBuffer buffer;
 
     public ConnectionContext() {
@@ -17,6 +18,14 @@ public class ConnectionContext {
 
     public String getId() {
         return id;
+    }
+
+    public void setClientLabel(String clientLabel) {
+        this.clientLabel = clientLabel;
+    }
+
+    public String getClientLabel() {
+        return clientLabel;
     }
 
     public ByteBuffer getReadBuffer() {

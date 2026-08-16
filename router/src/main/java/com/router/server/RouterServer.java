@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class RouterServer implements RouterServerActions {
     private ServerSocketChannel marketSocketChannel;
@@ -99,27 +100,34 @@ public class RouterServer implements RouterServerActions {
 
         if (fixMessage.isPresent()) {
 
-            String id = fixMessage.map(m -> m.get("58")).orElse(null);
+            String clientLabel = fixMessage.map(m -> m.get("58")).orElse(null);
+            String id = generateUniqueId();
+            connectionContext.setClientLabel(clientLabel);
             connectionContext.setId(id);
 
             int localPort = ((InetSocketAddress) socketChannel.getLocalAddress()).getPort();
 
             LOGGER.info("Remote port : " + localPort);
 
-            switch (localPort) {
-                case 5000:
-                    LOGGER.info(String.format("market: %s is now identified by the router", id));
-                    markets.put(id, socketChannel);
-                    break;
-                case 5001:
-                    LOGGER.info(String.format("broker: %s is now identified by the router", id));
-                    brokers.put(id, socketChannel);
-                    break;
+            if (localPort == brokerPort) {
+                LOGGER.info(String.format("broker '%s' is now identified by the router as %s", clientLabel, id));
+                brokers.put(id, socketChannel);
+            } else if (localPort == marketPort) {
+                LOGGER.info(String.format("market '%s' is now identified by the router as %s", clientLabel, id));
+                markets.put(id, socketChannel);
             }
 
             String report = FixMessageFactory.createLogonIdentifierReport(routerId, id, "Registered successfully");
             this.sendMessage(id, report);
         }
+    }
+
+    private String generateUniqueId() {
+        String candidate;
+        do {
+            candidate = String.format("%06d", ThreadLocalRandom.current().nextInt(1_000_000));
+        } while (markets.containsKey(candidate) || brokers.containsKey(candidate));
+        return candidate;
     }
 
     @Override
@@ -155,13 +163,10 @@ public class RouterServer implements RouterServerActions {
             SelectionKey clientKey = socketChannel.register(selector, SelectionKey.OP_READ);
             clientKey.attach(new ConnectionContext());
             LOGGER.info("Accepted connection from " + socketChannel.getRemoteAddress());
-            switch (serverChannel.socket().getLocalPort()) {
-                case 5000:
-                    LOGGER.info("Market is connected.");
-                    break;
-                case 5001:
-                    LOGGER.info("Broker is connected.");
-                    break;
+            if (serverChannel == brokerSocketChannel) {
+                LOGGER.info("Broker is connected.");
+            } else if (serverChannel == marketSocketChannel) {
+                LOGGER.info("Market is connected.");
             }
         }
     }
