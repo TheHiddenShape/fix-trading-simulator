@@ -8,22 +8,27 @@
 
 ## Running
 
-Start the 3 services in 3 separate terminals, in this order (Router first):
+First, build once from the root so the modules are available locally:
+```bash
+mvn clean install
+```
+
+Then start the 3 services in 3 separate terminals, in this order (Router first):
 
 **Terminal 1 — Router**
 ```bash
-mvn -pl router -am org.codehaus.mojo:exec-maven-plugin:3.1.0:java \
-  -Dexec.mainClass=com.router.Main
+# router/
+mvn org.codehaus.mojo:exec-maven-plugin:3.1.0:java -Dexec.mainClass=com.router.Main
 ```
 
 **Terminal 2 — Market**
 ```bash
-mvn -pl market -am org.codehaus.mojo:exec-maven-plugin:3.1.0:java \
-  -Dexec.mainClass=com.market.Main
+# market/
+mvn org.codehaus.mojo:exec-maven-plugin:3.1.0:java -Dexec.mainClass=com.market.Main
 ```
 
 **Terminal 3 — Broker**
 ```bash
-mvn -pl broker -am org.codehaus.mojo:exec-maven-plugin:3.1.0:java \
-  -Dexec.mainClass=com.broker.Main
+# broker/
+mvn org.codehaus.mojo:exec-maven-plugin:3.1.0:java -Dexec.mainClass=com.broker.Main
 ```
